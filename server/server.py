@@ -32,8 +32,7 @@ def onNewClient(client, connection):
         
     while True:                        
         message = client.recv(1024)        
-        req = message.decode('utf-8')
-        # print(f"{port}: {req}")         
+        req = message.decode('utf-8')        
         if len(timers) > 0:     
             check_timers(port, cache, timers)
         end = read_request(req, port, client, cache, timers)
@@ -67,6 +66,7 @@ def read_request(req, port, client, cache, timers):
 
     elif req[3:11] == 'flushall':        
         cache[port] = {}        
+        timers.clear()
         client.sendall("+OK\r\n".encode('utf-8'))
 
     elif req[3:7] == "echo":                             
