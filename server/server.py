@@ -78,22 +78,16 @@ def read_request(req, port, client):
         entry = req[7:].strip()                             
         handle_delete(entry, port, client)        
     
-    # handle array - .send()
-    elif req[0:1] == "*":                                            
-        handle_array(req.split(' '), client)        
-
     elif req[0:3] == "get":                        
         res = req[4:len(req)-2]             
         handle_get(res, port, client)
-    
-    # set with simple string
+        
     elif req[0:3] == "set":             
         key = req.split(' ')[1]
         val = req.split(' ')[2]                
         exp = req.split(' ')[3]           
         handle_set(key, val, exp[:len(exp)-2], port, client)                                                      
 
-    # handle increment integer   
     elif req[0:4] == "incr":            
         res = req[4:].strip()                    
         handle_incr(res, port, client)
@@ -109,11 +103,6 @@ def handle_delete(key, port, client):
             client.sendall(f"+OK\r\n".encode('utf-8'))
     else:
         client.sendall(":-1\r\n".encode('utf-8'))
-
-
-def handle_array(array, client):
-    # TODO: complete array implementation
-    client.sendall(f"$5\r\narray\r\n".encode('utf-8'))
 
 
 def handle_incr(res, port, client):

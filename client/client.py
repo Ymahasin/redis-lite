@@ -47,17 +47,11 @@ class RedisClient:
             while char != b'\n':
                 char = await self.r.read(1)
                 length += char
-            
-            # duck typing, terrible practice
-            # remove the \r
-            # +2 to capture the final \n
+                        
             total_length = int(length[:-1]) + 2
 
             result = b''
-            while len(result) < total_length:
-                # append to our result
-                #  we'll calculate the how much to read in as
-                # the total minus what we've already got
+            while len(result) < total_length:                
                 result += await self.r.read(total_length-len(result))
 
             return result[:-2].decode()
