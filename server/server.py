@@ -21,22 +21,22 @@ try:
 except Exception as e:
     raise SystemExit(f"Could not bind server on host: {args.host} to port: {args.port} because: {e}")
 
-cache = {}
-timers = []
 
 def onNewClient(client, connection):
     ip = connection[0]
     port = connection[1]
+    cache = {}
+    timers = []
 
     print(f"New connection made from IP: {ip} and PORT: {port}")    
         
     while True:                        
         message = client.recv(1024)        
         req = message.decode('utf-8')
-        print(f"{port}: {req}")         
+        # print(f"{port}: {req}")         
         if len(timers) > 0:     
-            check_timers(port)
-        end = read_request(req, port, client)
+            check_timers(port, cache, timers)
+        end = read_request(req, port, client, cache, timers)
 
         if end == 1:
             break
@@ -45,7 +45,7 @@ def onNewClient(client, connection):
     client.close()
 
 
-def check_timers(port):            
+def check_timers(port, cache, timers):   
     for timer in range(len(timers)):
         entry = timers[timer]        
         for port, key in entry.items():                        
@@ -57,7 +57,7 @@ def check_timers(port):
                 del timers[timer]            
 
 
-def read_request(req, port, client):    
+def read_request(req, port, client, cache, timers):    
     if req[3:7] == "exit":
         client.sendall("+Goodbye\r\n".encode('utf-8'))
         return 1
@@ -66,7 +66,7 @@ def read_request(req, port, client):
         client.sendall("+pong\r\n".encode('utf-8'))            
 
     elif req[3:11] == 'flushall':        
-        cache[port] = {}
+        cache[port] = {}        
         client.sendall("+OK\r\n".encode('utf-8'))
 
     elif req[3:7] == "echo":                             
@@ -76,27 +76,27 @@ def read_request(req, port, client):
     
     elif req[3:6] == "del":                  
         entry = req[7:].strip()                             
-        handle_delete(entry, port, client)        
+        handle_delete(entry, cache, port, client)        
     
     elif req[0:3] == "get":                        
         res = req[4:len(req)-2]             
-        handle_get(res, port, client)
+        handle_get(res, cache, port, client)
         
     elif req[0:3] == "set":             
         key = req.split(' ')[1]
         val = req.split(' ')[2]                
         exp = req.split(' ')[3]           
-        handle_set(key, val, exp[:len(exp)-2], port, client)                                                      
+        handle_set(key, val, cache, timers, exp[:len(exp)-2], port, client)                                                      
 
     elif req[0:4] == "incr":            
         res = req[4:].strip()                    
-        handle_incr(res, port, client)
+        handle_incr(res, cache, port, client)
  
     else:                     
         client.sendall("+No match\r\n".encode('utf-8'))
 
 
-def handle_delete(key, port, client):
+def handle_delete(key, cache, port, client):
     if port in cache:
         if key in cache[port]:    
             del cache[port][key]
@@ -105,7 +105,7 @@ def handle_delete(key, port, client):
         client.sendall(":-1\r\n".encode('utf-8'))
 
 
-def handle_incr(res, port, client):
+def handle_incr(res, cache, port, client):
     if port in cache:                
         if res in cache[port]:            
             try:
@@ -120,7 +120,7 @@ def handle_incr(res, port, client):
         client.sendall(f"+Entry does not exist\r\n".encode('utf-8'))
 
 
-def handle_set(key, val, expires, port, client):
+def handle_set(key, val, cache, timers, expires, port, client):
     if int(expires) > 0:
         timers.append({port: key})
 
@@ -133,7 +133,7 @@ def handle_set(key, val, expires, port, client):
     client.sendall(f"+OK\r\n".encode('utf-8'))     
 
 
-def handle_get(res, port, client):    
+def handle_get(res, cache, port, client):    
     if port in cache:                                                         
         if res in cache[port]:                         
             valLength = len(cache[port][res][res])
