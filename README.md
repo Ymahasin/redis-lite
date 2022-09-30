@@ -2,7 +2,7 @@
 
 This is a lite implementation of a Redis Client/Server with some of the core commands such as GET, SET, and EXPIRE.
 
-Link to demonstration: TODO
+Link to demonstration: https://youtu.be/Q4EN3oT5QPU 
 
 ## How to use:
 1. Open the command line and change directory to redis/server
